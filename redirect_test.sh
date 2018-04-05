@@ -3,7 +3,7 @@
 cnt=0
 sum=0
 
-tgt_check_list=list_translate.csv
+tgt_check_list=st-list_translate.csv
 
 while read line; do
 	if [ $cnt -lt 1 -a $sum -gt 0 ]; then

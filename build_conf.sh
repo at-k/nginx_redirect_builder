@@ -31,15 +31,15 @@ while read line; do
 	#echo $src
 	#echo $dst_dir
 	#echo $src_tmp
-	if [ ! -z "$src_tmp" -a "$src_tmp" != "-"]; then
+	if [ ! -z "$src_tmp" -a "$src_tmp" != "-" ]; then
 		echo "location = /$src_tmp { include conf.d/get_type; rewrite ^(.*)$ $dst_dir\$type?;}" >> redirect_tmp
 	fi
 
 	if [ ! -z "$src_param" ]; then
-		echo "if ( \$arg_$src_ptype = \"$src_param\" ) { set \$type \"/$dst_param\"; }" >> get_type_tmp
+		echo "if ( \$args ~ \"$src_ptype=$src_param\" ) { set \$type \"\${type}-$dst_param\"; }" >> get_type_tmp
 #		url_enc=$(echo $src_param | nkf -WwMQ | tr = % | tr -d '\n')
 		url_enc=$(echo $src_param | nkf -WwMQ | tr -d '\n' | sed -e 's/==/=/' -e 's/=/%/g')
-		echo "if ( \$arg_$src_ptype = $url_enc ) { set \$type \"/$dst_param\"; }" >> get_type_tmp
+		echo "if ( \$args ~ \"$src_ptype=$url_enc\" ) { set \$type \"\${type}-$dst_param\"; }" >> get_type_tmp
 #		printf %s%q%s "if ( \$arg_$src_ptype = " "$url_enc" " ) { set \$type \"/$dst_param\"; }" >> get_type_tmp
 	fi
 
@@ -47,5 +47,11 @@ done < $tgt_list_file
 
 echo 'set $type "";' > get_type
 sort -t" " -k5 get_type_tmp | uniq | sort -t" " -k10 >> get_type
-sort -t" " -k3 redirect_tmp | uniq > redirect
+echo >> get_type
+echo 'if ( $type ~ ^-(.*) ) { set $type $1;}' >> get_type
+echo 'if ( $type != "" ) { set $type "/$type";}' >> get_type
+
+cat redirect_base > redirect
+echo >> redirect
+sort -t" " -k3 redirect_tmp | uniq >> redirect
 
