@@ -15,6 +15,7 @@ while read line; do
 	src_param=""
 	dst_param=""
 	dst_dir=""
+	dst_dom=""
 
 	src_param=$(echo $src | cut -d\? -f2 -s)
 	if [ ! -z $src_param ]; then
@@ -22,17 +23,20 @@ while read line; do
 		src_param=$(echo $src_param | cut -d= -f2 -s)
 		src_tmp=$(echo $src | cut -d/ -f4- -s | cut -d\? -f1 -s)
 		dst_param=$(basename $(echo $dst))
-		dst_dir=$(dirname $(echo $dst))
+		dst_dom=$(echo $dst | cut -d/ -f1-3)
+		dst_dir=$(dirname $(echo $dst) | cut -d/ -f4-)
 	else
 		src_tmp=$(echo $src | cut -d/ -f4- )
 		src_param=""
-		dst_dir=$dst
+		dst_dom=$(echo $dst | cut -d/ -f1-3)
+		dst_dir=$(echo $dst | cut -d/ -f4-)
 	fi
 	#echo $src
 	#echo $dst_dir
 	#echo $src_tmp
 	if [ ! -z "$src_tmp" -a "$src_tmp" != "-" ]; then
-		echo "location = /$src_tmp { include conf.d/get_type; rewrite ^(.*)$ $dst_dir\$type?;}" >> redirect_tmp
+		# echo "location = /$src_tmp { include conf.d/get_type; rewrite ^(.*)$ $dst_dir\$type?;}" >> redirect_tmp
+		echo "location = /$src_tmp { include conf.d/get_type; set \$subdir /$dst_dir; if ( \$type ~ (.*)-(.*) ) { set \$subdir \"\"; set \$type \"\"; } rewrite ^(.*)$ $dst_dom\$subdir\$type? permanent;}" >> redirect_tmp
 	fi
 
 	if [ ! -z "$src_param" ]; then
